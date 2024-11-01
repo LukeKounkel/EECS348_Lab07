@@ -1,127 +1,155 @@
 #include <iostream>
-#include <vector>
 #include <fstream>
-#include <iomanip>
+#include <vector>
 using namespace std;
 
-/*
-Name: Luke Kounkel
-KUID: 3215488
-Description: This lab builds on Lab 5, leveraging additional C++ features, such as classes and function overloading, and operator overloading.
-Collaborators: None
-*/
-
-
 class Matrix {
-private:
-    int size; // Matrix is assumed to be square, so size x size
-    vector<vector<int>> data;
-
 public:
-    // Constructor to initialize an empty matrix of given size
-    Matrix(int n) : size(n), data(n, vector<int>(n, 0)) {}
+    int matrix_size;
+    double** matrix_data;
 
-    // Function to load matrix data from a file
-    bool loadFromFile(const string& filename) {
-        ifstream file(filename);
-        if (!file.is_open()) return false;
-
-        file >> size; // Read matrix size
-        data.resize(size, vector<int>(size, 0));
-        for (int i = 0; i < size; ++i) {
-            for (int j = 0; j < size; ++j) {
-                file >> data[i][j];
+    // Constructor with size parameter
+    Matrix(int size = 0) : matrix_size(size) {
+        matrix_data = new double*[matrix_size];
+        for (int i = 0; i < matrix_size; ++i) {
+            matrix_data[i] = new double[matrix_size];
+            for (int j = 0; j < matrix_size; ++j) {
+                matrix_data[i][j] = 0; // Initialize with zeros
             }
-        }
-        file.close();
-        return true;
-    }
-
-    // Function to display the matrix
-    void display() const {
-        for (const auto& row : data) {
-            for (int val : row) {
-                cout << setw(4) << val;
-            }
-            cout << endl;
         }
     }
 
-    // Operator overloading for matrix addition
+    // Destructor to free memory
+    ~Matrix() {
+        for (int i = 0; i < matrix_size; ++i) {
+            delete[] matrix_data[i];
+        }
+        delete[] matrix_data;
+    }
+
+    // Overloaded addition operator
     Matrix operator+(const Matrix& other) const {
-        Matrix result(size);
-        for (int i = 0; i < size; ++i) {
-            for (int j = 0; j < size; ++j) {
-                result.data[i][j] = data[i][j] + other.data[i][j];
+        Matrix result(matrix_size);
+        for (int i = 0; i < matrix_size; ++i) {
+            for (int j = 0; j < matrix_size; ++j) {
+                result.matrix_data[i][j] = this->matrix_data[i][j] + other.matrix_data[i][j];
             }
         }
         return result;
     }
 
-    // Operator overloading for matrix multiplication
+    // Overloaded multiplication operator
     Matrix operator*(const Matrix& other) const {
-        Matrix result(size);
-        for (int i = 0; i < size; ++i) {
-            for (int j = 0; j < size; ++j) {
-                result.data[i][j] = 0;
-                for (int k = 0; k < size; ++k) {
-                    result.data[i][j] += data[i][k] * other.data[k][j];
+        Matrix result(matrix_size);
+        for (int i = 0; i < matrix_size; ++i) {
+            for (int j = 0; j < matrix_size; ++j) {
+                for (int k = 0; k < matrix_size; ++k) {
+                    result.matrix_data[i][j] += this->matrix_data[i][k] * other.matrix_data[k][j];
                 }
             }
         }
         return result;
     }
-
-    // Function to calculate the sum of the main and secondary diagonal elements
-    int diagonalSum() const {
-        int mainDiagSum = 0, secDiagSum = 0;
-        for (int i = 0; i < size; ++i) {
-            mainDiagSum += data[i][i];
-            secDiagSum += data[i][size - 1 - i];
-        }
-        return mainDiagSum + secDiagSum;
-    }
-
-    // Function to swap two rows in the matrix
-    void swapRows(int row1, int row2) {
-        if (row1 >= 0 && row1 < size && row2 >= 0 && row2 < size) {
-            swap(data[row1], data[row2]);
-        } else {
-            cout << "Invalid row indices for swapping!" << endl;
-        }
-    }
 };
 
-int main() {
-    Matrix mat(4); // Assuming a default size initially; actual size will be set from the file
-    if (!mat.loadFromFile("matrix_input.txt")) {
-        cout << "Error loading matrix from file." << endl;
-        return 1;
+void read_matrix_from_file(const string& file_name, Matrix& matrix_1, Matrix& matrix_2) {
+    ifstream file(file_name);
+    int matrix_size;
+
+    if (file.is_open()) {
+        file >> matrix_size;  // Read the first value as the matrix size
+        if (matrix_size != matrix_1.matrix_size || matrix_size != matrix_2.matrix_size) {
+            cout << "Matrix size mismatch. Expected size: " << matrix_1.matrix_size << ", but found: " << matrix_size << endl;
+            return;
+        }
+
+        // Read data into matrix_1
+        for (int i = 0; i < matrix_size; ++i) {
+            for (int j = 0; j < matrix_size; ++j) {
+                file >> matrix_1.matrix_data[i][j];
+            }
+        }
+
+        // Read data into matrix_2
+        for (int i = 0; i < matrix_size; ++i) {
+            for (int j = 0; j < matrix_size; ++j) {
+                file >> matrix_2.matrix_data[i][j];
+            }
+        }
+
+        cout << "Matrices loaded from " << file_name << " successfully." << endl;
+        file.close();
+    } else {
+        cout << "Failed to open file " << file_name << endl;
+    }
+}
+
+
+void print_matrix(const Matrix& matrix) {
+    for (int i = 0; i < matrix.matrix_size; ++i) {
+        for (int j = 0; j < matrix.matrix_size; ++j) {
+            cout << matrix.matrix_data[i][j] << " ";
+        }
+        cout << endl;
+    }
+}
+
+void get_diagonal_sum(const Matrix& matrix) {
+    double main_diagonal_sum = 0;
+    double secondary_diagonal_sum = 0;
+
+    for (int i = 0; i < matrix.matrix_size; ++i) {
+        main_diagonal_sum += matrix.matrix_data[i][i];
+        secondary_diagonal_sum += matrix.matrix_data[i][matrix.matrix_size - i - 1];
     }
 
-    cout << "Matrix loaded from file:" << endl;
-    mat.display();
+    cout << "Main Diagonal Sum: " << main_diagonal_sum << endl;
+    cout << "Secondary Diagonal Sum: " << secondary_diagonal_sum << endl;
+}
 
-    // Example of matrix addition
-    Matrix mat2 = mat; // Copy of mat for addition demonstration
-    Matrix sumMatrix = mat + mat2;
-    cout << "\nMatrix after addition:" << endl;
-    sumMatrix.display();
+void swap_matrix_row(Matrix& matrix, int row1, int row2) {
+    // Validate row indices
+    if (row1 < 0 || row1 >= matrix.matrix_size || row2 < 0 || row2 >= matrix.matrix_size) {
+        cout << "Invalid row indices: " << row1 << " and " << row2 << endl;
+        return;
+    }
 
-    // Example of matrix multiplication
-    Matrix productMatrix = mat * mat2;
-    cout << "\nMatrix after multiplication:" << endl;
-    productMatrix.display();
+    // Swap rows
+    for (int j = 0; j < matrix.matrix_size; ++j) {
+        swap(matrix.matrix_data[row1][j], matrix.matrix_data[row2][j]);
+    }
 
-    // Example of calculating diagonal sums
-    int diagSum = mat.diagonalSum();
-    cout << "\nSum of main and secondary diagonal elements: " << diagSum << endl;
+    cout << "Rows " << row1 << " and " << row2 << " have been swapped." << endl;
+    print_matrix(matrix);  // Display the matrix after swapping rows
+}
 
-    // Example of swapping rows
-    int row1 = 1, row2 = 3;
-    cout << "\nMatrix after swapping rows " << row1 << " and " << row2 << ":" << endl;
-    mat.swapRows(row1, row2);
-    mat.display();
+void print_matrix(const Matrix& matrix_1, const Matrix& matrix_2) {
+    cout << "Matrix 1:" << endl;
+    print_matrix(matrix_1);
+    cout << "Matrix 2:" << endl;
+    print_matrix(matrix_2);
+}
+
+int main(int argc, char* argv[]) {
+    Matrix matrix_1(4), matrix_2(4);
+    read_matrix_from_file("matrix_input.txt", matrix_1, matrix_2);
+
+    cout << "Printing matrices:" << endl;
+    print_matrix(matrix_1, matrix_2);
+
+    cout << "Adding matrices:" << endl;
+    Matrix add_result = matrix_1 + matrix_2;
+    print_matrix(add_result);
+
+    cout << "Multiplying matrices:" << endl;
+    Matrix multiply_result = matrix_1 * matrix_2;
+    print_matrix(multiply_result);
+
+    cout << "get matrix diagonal sum" << endl;
+    get_diagonal_sum(matrix_1);
+
+    cout << "swap matrix rows" << endl;
+    swap_matrix_row(matrix_1, 0, 1);
 
     return 0;
 }
