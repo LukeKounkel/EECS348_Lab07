@@ -3,6 +3,13 @@
 #include <vector>
 using namespace std;
 
+/*
+Name: Luke Kounkel
+KUID: 3215488
+Description: This lab builds on Lab 5, leveraging additional C++ features, such as classes and function overloading, and operator overloading.
+Collaborators: None
+*/
+
 class Matrix {
 public:
     int matrix_size;
